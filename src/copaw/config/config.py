@@ -60,6 +60,7 @@ class TelegramConfig(BaseChannelConfig):
     http_proxy_auth: str = ""
     show_typing: Optional[bool] = None
 
+
 class MQTTConfig(BaseChannelConfig):
     host: str = ""
     port: str = ""

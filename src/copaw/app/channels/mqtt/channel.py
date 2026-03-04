@@ -2,11 +2,10 @@
 """MQTT Channel for IoT devices and robots"""
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import threading
-from typing import Dict, Any, Optional, Union
+from typing import Any, Optional, Union
 
 import paho.mqtt.client as mqtt
 from paho.mqtt import MQTTException
@@ -132,7 +131,7 @@ class MQTTChannel(BaseChannel):
         if not self.publish_topic:
             raise ValueError("MQTT publish_topic is required")
 
-    def _on_connect(self, client, userdata, flags, rc):
+    def _on_connect(self, client, _userdata, _flags, rc):
         if rc == 0:
             self.connected = True
             logger.info("MQTT connected")
@@ -141,12 +140,12 @@ class MQTTChannel(BaseChannel):
         else:
             logger.error(f"MQTT connect failed, return code {rc}")
 
-    def _on_disconnect(self, client, userdata, rc):
+    def _on_disconnect(self, _client, _userdata, rc):
         self.connected = False
         if rc != 0:
             logger.warning(f"MQTT disconnected unexpectedly, code={rc}")
 
-    def _on_message(self, client, userdata, msg):
+    def _on_message(self, _client, _userdata, msg):
         try:
             # Parse device_id from topic structure: server/DEVICE_ID/up
             parts = msg.topic.split("/")
@@ -160,7 +159,7 @@ class MQTTChannel(BaseChannel):
             try:
                 data = json.loads(payload)
                 content = data.get("text", "")
-            except:
+            except json.JSONDecodeError:
                 content = payload
 
             if not content:
@@ -178,8 +177,8 @@ class MQTTChannel(BaseChannel):
                 "content_parts": content_parts,
                 "meta": {
                     "topic": msg.topic,
-                    "device_id": device_id
-                }
+                    "device_id": device_id,
+                },
             }
 
             # Enqueue the message
@@ -189,7 +188,10 @@ class MQTTChannel(BaseChannel):
                 logger.warning("MQTT: _enqueue not set, message dropped")
 
         except Exception as e:
-            logger.error(f"Error processing MQTT message: {str(e)}", exc_info=True)
+            logger.error(
+                f"Error processing MQTT message: {str(e)}",
+                exc_info=True,
+            )
 
     async def start(self) -> None:
         if not self.enabled:
@@ -224,7 +226,10 @@ class MQTTChannel(BaseChannel):
             return
 
         # Run MQTT loop in background thread
-        self._thread = threading.Thread(target=self.client.loop_forever, daemon=True)
+        self._thread = threading.Thread(
+            target=self.client.loop_forever,
+            daemon=True,
+        )
         self._thread.start()
 
         logger.info("✅ MQTT channel started")
@@ -283,7 +288,9 @@ class MQTTChannel(BaseChannel):
                 device_id = meta["device_id"]
 
             if not device_id:
-                logger.warning("MQTT send_media: no device_id in to_handle or meta")
+                logger.warning(
+                    "MQTT send_media: no device_id in to_handle or meta",
+                )
                 return
 
             # Format topic with device_id
@@ -294,18 +301,30 @@ class MQTTChannel(BaseChannel):
             if part_type == ContentType.IMAGE:
                 image_url = getattr(part, "image_url", None)
                 if image_url:
-                    self.client.publish(send_topic, f"[Image: {image_url}]", qos=0)
+                    self.client.publish(
+                        send_topic,
+                        f"[Image: {image_url}]",
+                        qos=0,
+                    )
             elif part_type == ContentType.VIDEO:
                 video_url = getattr(part, "video_url", None)
                 if video_url:
-                    self.client.publish(send_topic, f"[Video: {video_url}]", qos=0)
+                    self.client.publish(
+                        send_topic,
+                        f"[Video: {video_url}]",
+                        qos=0,
+                    )
             elif part_type == ContentType.AUDIO:
                 self.client.publish(send_topic, "[Audio]", qos=0)
             elif part_type == ContentType.FILE:
                 file_url = getattr(part, "file_url", None)
                 file_id = getattr(part, "file_id", None)
                 if file_url or file_id:
-                    self.client.publish(send_topic, f"[File: {file_url or file_id}]", qos=0)
+                    self.client.publish(
+                        send_topic,
+                        f"[File: {file_url or file_id}]",
+                        qos=0,
+                    )
 
         except Exception as e:
             logger.error(f"Failed to send MQTT media: {str(e)}")
