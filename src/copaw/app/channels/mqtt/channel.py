@@ -227,7 +227,6 @@ class MQTTChannel(BaseChannel):
     try:
       payload = msg.payload.decode("utf-8").strip()
       data = {}
-      content = ""
       try:
         data = json.loads(payload)
         content = data.get("text", "")
@@ -235,17 +234,14 @@ class MQTTChannel(BaseChannel):
         content = payload
 
       if not content:
+        logger.error(f"Error MQTT message: {msg.topic} - {payload}")
         return
 
-      client_id = ""
-      parts = msg.topic.split("/")
-      if len(parts) >= 2:
-        for i in range(len(parts)):
-          if parts[i] not in ["server", "device", "up", "down", "message"]:
-            client_id = parts[i]
-            break
+      client_id = data.get("redirect_client_id")
       if not client_id:
-        client_id = data.get("client_id") or data.get("device_id") or data.get("deviceId")
+        parts = msg.topic.split("/")
+        if len(parts) >= 2:
+          client_id = parts[1]
       if not client_id:
         client_id = "unknown-client"
         logger.warning(f"MQTT: No client_id found in topic or payload: {msg.topic}")
