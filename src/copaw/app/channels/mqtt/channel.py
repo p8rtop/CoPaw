@@ -317,6 +317,7 @@ class MQTTChannel(BaseChannel):
                 keyfile=self.tls_keyfile,
             )
 
+        self.client.reconnect_delay_set(min_delay=1, max_delay=10)
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
         self.client.on_disconnect = self._on_disconnect
