@@ -36,6 +36,7 @@ const CHANNEL_DOC_URLS: Partial<Record<ChannelKey, string>> = {
   discord: "https://copaw.agentscope.io/docs/channels/#Discord",
   qq: "https://copaw.agentscope.io/docs/channels/#QQ",
   telegram: "https://copaw.agentscope.io/docs/channels/#Telegram",
+  mqtt: "https://copaw.agentscope.io/docs/channels/#MQTT",
 };
 const twilioConsoleUrl = "https://console.twilio.com";
 
